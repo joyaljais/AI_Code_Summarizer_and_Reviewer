@@ -37,12 +37,9 @@ E&R Tool (Explain & Review Tool) is a simple command-line interface (CLI) tool t
 
 ## Usage
 
-Navigate to the project directory in the terminal:
-```
-cd "/Users/E&R tool"
-```
+1. Navigate to the project directory in the terminal.
 
-Explain a code file:
+2. Explain a code file:
 ```
 python E&R_tool.py explain example.py
 ```
