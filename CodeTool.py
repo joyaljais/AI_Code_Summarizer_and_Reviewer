@@ -2,9 +2,15 @@ import argparse
 import os
 from groq import Groq
 from dotenv import load_dotenv
+from rich.text import Text
+from rich.console import Console
+from rich.panel import Panel
+from rich.live import Live
+from rich.spinner import Spinner
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+console = Console()
 
 
 parser = argparse.ArgumentParser(description="Code explainer and reviewer CLI tool.")
@@ -19,24 +25,21 @@ review_parser = subparsers.add_parser("review")
 review_parser.add_argument("filename", type=str)
 
 args = parser.parse_args()
-
+    
 if args.command == "explain":
-    system_prompt = """You are a helpful code explainer assistant. Understand and explain the provided code briefly. Make sure to explain the code to the user
+    system_prompt = ("""You are a helpful code explainer assistant. Understand and explain the provided code briefly. Make sure to explain the code to the user
     as like as they are biginner in programing. The output of this is shown in the cli so generate the output according to that.
-    DO NOT use mark down output format."""
+    DO NOT use mark down output format.""")
+    title, color = "Code Explanation", "cyan"
+
+    
 
 elif args.command == "review":
-    system_prompt = """You are an expert code reviewer. Carefully review the provided code and give constructive feedback. 
-        Cover the following areas:
-        1. Bugs or potential runtime errors
-        2. Security concerns
-        3. Code style and readability
-        4. Performance improvements 
-        5. Best-practice suggestions
-        Be concise and specific. Reference line content where helpful.
-        The output is shown in the CLI, so do NOT use markdown formatting."""
+    system_prompt = ("""You are an expert code reviewer. Give concise feedback covering: bugs, security,
+        style, performance, and best practices. Output is shown in CLI, no markdown.""")
+    title, color = "Code Review", "magenta"
 else:
-    print("Wrong Command!")
+    console.print("[red]Wrong Command!")
     exit()
 
 
@@ -44,10 +47,17 @@ try:
     with open(args.filename, 'r', encoding='utf-8') as file:
         content = file.read()
 except(FileNotFoundError):
-    print("File not found!")
+    console.print("[red]File not found!")
 
 
-completion = client.chat.completions.create(
+console.print(f"[dim] {args.filename}[/]")
+console.print(Panel("", title=f"[bold {color}]{title}[/]", border_style=color, padding=0))
+console.print()
+
+# Loading effect
+
+with Live(Spinner("dots", text=Text("Thinking...", style="dim")), console=console, transient=True):
+    completion = client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=[
             {
@@ -66,5 +76,9 @@ completion = client.chat.completions.create(
         stream=True,
         stop=None
     )
+    first = next(iter(completion))
+
 for chunk in completion:
     print(chunk.choices[0].delta.content or "", end="")
+
+    
